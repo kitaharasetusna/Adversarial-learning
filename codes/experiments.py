@@ -12,7 +12,8 @@ import  matplotlib.pyplot as plt
 #some parameters to be set
 '''TODO: add argparse'''
 #default model
-pretrained_model = "../models/lenet_mnist_model.pth"
+# pretrained_model = "../models/lenet_mnist_model.pth"
+pretrained_model = "../models/cifar_net.pth"
 #whether to use cuda
 use_cuda=True
 #epsilion
@@ -20,8 +21,8 @@ epsilons = [0, .05, .1, .15, .2, .25, .3]
 #name of attack model
 ATTACK_MODEL = 'FGSM'
 '''TODO: make it work on cifar'''
-DATASET = 'mnist'
-TARGET_MODEL = "cnn"
+DATASET = 'cifar10'
+TARGET_MODEL = "d_2"
 
 '''----------------------------0.initialize pytorch BEGIN----------------------------------'''
 #initialization device to use
@@ -30,7 +31,10 @@ device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "c
 '''----------------------------0.initialize pytorch  END----------------------------------'''
 
 '''----------------------------1.load the trained model BEGIN----------------------------------'''
-model = Default_Net().to(device)
+if TARGET_MODEL=="lenet":
+    model = Default_Net().to(device)
+elif TARGET_MODEL=="d_2":
+    model = Default_Net_CIFAR().to(device)
 #Pytorch doc:
 # torch.load() uses Python’s unpickling facilities
 # but treats storages, which underlie tensors, specially.
@@ -71,10 +75,17 @@ examples = []
 '''
 TODO: doc mention that if it's first time, you have to set download option True
 '''
-test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('../data', train=False, download=False, transform=transforms.Compose([
+if DATASET =='mnist':
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST('../data', train=False, download=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                ])),
+            batch_size=1, shuffle=True)
+elif DATASET == 'cifar10':
+    test_loader = torch.utils.data.DataLoader(
+        datasets.CIFAR10(root='../data', train=False, download=True, transform=transforms.Compose([
             transforms.ToTensor(),
-            ])),
+        ])),
         batch_size=1, shuffle=True)
 # Run test for each epsilon
 
@@ -103,5 +114,5 @@ plt.show()
 
 
 '''-------------------------- -4.save exmaples BEGIN---------------------------------'''
-examples = np.array(examples)
+# examples = np.array(examples)
 np.save('../results/example_{0}_{2}_{1}'.format(DATASET, ATTACK_MODEL, TARGET_MODEL), examples)
